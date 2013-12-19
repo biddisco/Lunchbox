@@ -4,13 +4,32 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(Lunchbox)
 
+#-----------------------------------------------------------------------------
+# Declare a list of targets we are going to export from this project
+# If a sub-project of another, don't change the target export name
+#-----------------------------------------------------------------------------
+if (NOT PROJECT_EXPORTED_TARGETS)
+  SET (PROJECT_EXPORTED_TARGETS "lunchbox-targets")
+endif (NOT PROJECT_EXPORTED_TARGETS)
+
+#-----------------------------------------------------------------------------
+# To enable projects to compile against a build tree, we export local targets 
+# using this variable
+#-----------------------------------------------------------------------------
+if (NOT Lunchbox_EXTERNALLY_CONFIGURED)
+  # clear this variable ONLY if we are the root project
+  SET_GLOBAL_VARIABLE (PROJECT_EXPORTED_TARGETS_BUILD "")
+endif (NOT Lunchbox_EXTERNALLY_CONFIGURED)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 option(LUNCHBOX_USE_OPENMP "Test for OpenMP support" ON)
 option(LUNCHBOX_BUILD_V2_API
   "Enable for pure 2.0 API (breaks compatibility with 1.x API)" OFF)
 option(LUNCHBOX_FORCE_OPENMP "Force usage of buggy OpenMP implementation" OFF)
 mark_as_advanced(LUNCHBOX_FORCE_OPENMP)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 
 set(RELEASE_VERSION 2) # OFF or ABI version
 set(LAST_RELEASE 1.8.0) # tarball, MacPorts, ...
@@ -31,8 +50,9 @@ if(RELEASE_VERSION)
 endif()
 
 include(Common)
-include(GitTargets)
+#include(GitTargets)
 include(UpdateFile)
+include(FindPackages)
 
 if(LUNCHBOX_BUILD_V2_API)
   set(FIND_PACKAGES_DEFINES LUNCHBOX_USE_V2_API)
@@ -78,17 +98,35 @@ add_definitions(${LUNCHBOX_DEFINITIONS})
 include(InstallSymlink)
 include(pthreads/CMakeLists.txt)
 
+if (WIN32) 
+  if (BUILD_SHARED_LIBS)
+    add_definitions(-DLUNCHBOX_SHARED) 
+  else(BUILD_SHARED_LIBS)
+    add_definitions(-DLUNCHBOX_STATIC)
+  endif(BUILD_SHARED_LIBS)
+endif (WIN32)
+
 add_subdirectory(lunchbox)
 add_subdirectory(tests)
 add_subdirectory(doc)
-include(DoxygenRule) # must be after all targets
-include(CPackConfig)
+#include(DoxygenRule) # must be after all targets
+#include(CPackConfig)
+
+#install(FILES CMake/FindLunchbox.cmake
+#  DESTINATION ${CMAKE_MODULE_INSTALL_PATH} COMPONENT dev)
+#install(FILES CMake/FindLibraryPackage.cmake
+#  DESTINATION ${CMAKE_MODULE_INSTALL_PATH}/FindLunchbox COMPONENT dev)
+
+message(STATUS "Configured with ${CMAKE_BUILD_TYPE}${LUNCHBOX_FEATURES}")
+
+#include(CPackConfig)
+
 include(GNUModules)
 
 set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
   # http://public.kitware.com/Bug/view.php?id=10179
   "ld: warning: duplicate dylib")
 include(CTest)
-include(PackageConfig)
+#include(PackageConfig)
 
 message(STATUS "Configured with ${CMAKE_BUILD_TYPE}${LUNCHBOX_FEATURES}")
