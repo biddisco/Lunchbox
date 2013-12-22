@@ -4,11 +4,42 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(Lunchbox)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake
-  ${CMAKE_SOURCE_DIR}/CMake/common)
+#-----------------------------------------------------------------------------
+# Global Variable macro
+#-----------------------------------------------------------------------------
+MACRO (SET_GLOBAL_VARIABLE name value)
+  SET (${name} ${value} CACHE INTERNAL "Used to pass variables between directories" FORCE)
+  message("${name} SET to ${value}")
+ENDMACRO (SET_GLOBAL_VARIABLE)
+MACRO (ADD_GLOBAL_VARIABLE name value)
+  SET (${name} ${${name}} ${value} CACHE INTERNAL "Used to pass variables between directories" FORCE)
+  message("${name} ADDED to ${${name}}")
+ENDMACRO (ADD_GLOBAL_VARIABLE)
+
+#-----------------------------------------------------------------------------
+# Declare a list of targets we are going to export from this project
+# If a sub-project of another, don't change the target export name
+#-----------------------------------------------------------------------------
+if (NOT PROJECT_EXPORTED_TARGETS)
+  SET (PROJECT_EXPORTED_TARGETS "lunchbox-targets")
+endif (NOT PROJECT_EXPORTED_TARGETS)
+
+#-----------------------------------------------------------------------------
+# To enable projects to compile against a build tree, we export local targets
+# using this variable
+#-----------------------------------------------------------------------------
+if (NOT Lunchbox_EXTERNALLY_CONFIGURED)
+  # clear this variable ONLY if we are the root project
+  SET_GLOBAL_VARIABLE (PROJECT_EXPORTED_TARGETS_BUILD "")
+endif (NOT Lunchbox_EXTERNALLY_CONFIGURED)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake
+  ${CMAKE_CURRENT_SOURCE_DIR}/CMake/common)
 include(.gitexternals)
 
-include(Buildyard)
+#include(Buildyard)
 if(BUILDYARD_STOP)
   return()
 endif()
@@ -26,7 +57,7 @@ set(VERSION_MINOR "9")
 set(VERSION_PATCH "0")
 
 include(Common)
-include(GitTargets)
+#include(GitTargets)
 include(UpdateFile)
 
 if(LUNCHBOX_BUILD_V2_API)
@@ -60,10 +91,10 @@ add_subdirectory(lunchbox)
 add_subdirectory(tests)
 add_subdirectory(doc)
 
-include(DoxygenRule) # must be after all targets
-include(CPackConfig)
-include(PackageConfig)
-include(GNUModules)
+#include(DoxygenRule) # must be after all targets
+#include(CPackConfig)
+#include(PackageConfig)
+#include(GNUModules)
 
 set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
   # http://public.kitware.com/Bug/view.php?id=10179
