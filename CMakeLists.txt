@@ -121,7 +121,7 @@ message(STATUS "Configured with ${CMAKE_BUILD_TYPE}${LUNCHBOX_FEATURES}")
 
 #include(CPackConfig)
 
-include(GNUModules)
+#include(GNUModules)
 
 set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
   # http://public.kitware.com/Bug/view.php?id=10179
