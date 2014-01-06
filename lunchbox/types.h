@@ -199,9 +199,9 @@ typedef PluginVisitorT< Plugin, EqCompressorInfo > PluginVisitor;
 typedef PluginVisitorT< const Plugin,
                         const EqCompressorInfo > ConstPluginVisitor;
 
-#ifdef LUNCHBOX_USE_V1_API
+//#ifdef LUNCHBOX_USE_V1_API
 typedef uint128_t UUID;
-#endif
+//#endif
 
 /** @cond IGNORE */
 struct CompressorInfo;
