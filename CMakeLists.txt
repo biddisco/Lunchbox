@@ -13,6 +13,25 @@ if(BUILDYARD_STOP)
   return()
 endif()
 
+#-----------------------------------------------------------------------------
+# Declare a list of targets we are going to export from this project
+# If a sub-project of another, don't change the target export name
+#-----------------------------------------------------------------------------
+if (NOT PROJECT_EXPORTED_TARGETS)
+  SET (PROJECT_EXPORTED_TARGETS "lunchbox-targets")
+endif (NOT PROJECT_EXPORTED_TARGETS)
+
+#-----------------------------------------------------------------------------
+# To enable projects to compile against a build tree, we export local targets 
+# using this variable
+#-----------------------------------------------------------------------------
+if (NOT Lunchbox_EXTERNALLY_CONFIGURED)
+  # clear this variable ONLY if we are the root project
+  SET_GLOBAL_VARIABLE (PROJECT_EXPORTED_TARGETS_BUILD "")
+endif (NOT Lunchbox_EXTERNALLY_CONFIGURED)
+
+
+
 option(LUNCHBOX_BUILD_V2_API
   "Enable for pure 2.0 API (breaks compatibility with 1.x API)" OFF)
 
@@ -60,12 +79,19 @@ include(InstallSymlink)
 include(pthreads/CMakeLists.txt)
 
 add_subdirectory(lunchbox)
-add_subdirectory(tests)
-add_subdirectory(doc)
+if (BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
 
-include(DoxygenRule) # must be after all targets
-include(CPackConfig)
-include(PackageConfig)
+if(BUILD_DOCUMENTATION)
+  add_subdirectory(doc)
+  include(DoxygenRule) # must be after all targets
+endif()
+if(NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
+  include(CPackConfig)
+  include(PackageConfig)
+endif()
+
 include(GNUModules)
 
 set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
