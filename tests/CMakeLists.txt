@@ -27,7 +27,7 @@ foreach(FILE ${TEST_FILES})
   string(REGEX REPLACE ".cpp" "" NAME ${FILE})
   string(REGEX REPLACE "[./]" "_" NAME ${NAME})
   source_group(\\ FILES ${FILE})
-  add_executable(${NAME} ${FILE})
+  bbp_add_executable(${NAME} ${FILE})
   set_target_properties(${NAME} PROPERTIES FOLDER "Tests")
   target_link_libraries(${NAME} Lunchbox ${Boost_LIBRARIES})
 
