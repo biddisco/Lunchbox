@@ -27,7 +27,7 @@ endif (NOT PROJECT_EXPORTED_TARGETS)
 #-----------------------------------------------------------------------------
 if (NOT Lunchbox_EXTERNALLY_CONFIGURED)
   # clear this variable ONLY if we are the root project
-  SET(PROJECT_EXPORTED_TARGETS_BUILD "")
+  SET_GLOBAL_VARIABLE (PROJECT_EXPORTED_TARGETS_BUILD "")
 endif (NOT Lunchbox_EXTERNALLY_CONFIGURED)
 
 
