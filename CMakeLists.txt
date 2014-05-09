@@ -101,9 +101,9 @@ if(BUILD_DOCUMENTATION)
 endif()
 if(NOT ${PROJECT_NAME}_EXTERNALLY_CONFIGURED)
   include(CPackConfig)
+  include(GNUModules)
 endif()
 
-include(GNUModules)
 
 set(CTEST_CUSTOM_WARNING_EXCEPTION ${CTEST_CUSTOM_WARNING_EXCEPTION}
   # http://public.kitware.com/Bug/view.php?id=10179
