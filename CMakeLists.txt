@@ -27,7 +27,7 @@ endif (NOT PROJECT_EXPORTED_TARGETS)
 #-----------------------------------------------------------------------------
 if (NOT Lunchbox_EXTERNALLY_CONFIGURED)
   # clear this variable ONLY if we are the root project
-  SET_GLOBAL_VARIABLE (PROJECT_EXPORTED_TARGETS_BUILD "")
+  SET(PROJECT_EXPORTED_TARGETS_BUILD "")
 endif (NOT Lunchbox_EXTERNALLY_CONFIGURED)
 
 
@@ -67,7 +67,7 @@ if(OPENMP_FOUND)
 endif()
 
 set(LUNCHBOX_DEFINITIONS ${LUNCHBOX_DEFINITIONS}
-  -DLUNCHBOX_BUILD_DIR="${CMAKE_BINARY_DIR}/")
+  -DLUNCHBOX_BUILD_DIR="${CMAKE_CURRENT_BINARY_DIR}/")
 add_definitions(${LUNCHBOX_DEFINITIONS})
 
 if(APPLE)
