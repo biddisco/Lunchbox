@@ -34,18 +34,10 @@ if (WIN32)
   endif(BUILD_SHARED_LIBS)
 endif (WIN32)
 
-if(NOT WIN32 AND NOT CMAKE_COMPILER_IS_XLCXX)
-  add_definitions(-DHAVE_BUILTIN_CTZ -DHAVE_BUILTIN_EXPECT)
-endif()
-add_definitions(-DHAVE_BYTESWAP_H)
-add_library(${LIBRARY} SHARED ${LUNCHBOX_ALL})
-target_link_libraries(${LIBRARY} ${LUNCHBOX_LINKLIBS})
-set_target_properties(${LIBRARY}
-  PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION_ABI})
-BBP_SET_LIB_OPTIONS(${LIBRARY} ${LIBRARY} SHARED)
+set(LIBRARY Lunchbox)
 ADD_GLOBAL_VARIABLE(PROJECT_EXPORTED_TARGETS_BUILD ${LIBRARY})
 
-#common_library(Lunchbox)
+common_library(Lunchbox)
 
 source_group(\\ FILES CMakeLists.txt)
 source_group(plugin FILES ${PLUGIN_HEADERS})
