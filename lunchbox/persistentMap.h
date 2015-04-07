@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2014, Stefan.Eilemann@epfl.ch
+/* Copyright (c) 2014-2015, Stefan.Eilemann@epfl.ch
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License version 2.1 as published
@@ -23,6 +23,7 @@
 #include <lunchbox/log.h> // LBTHROW
 #include <lunchbox/types.h>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits.hpp>
 
@@ -142,8 +143,7 @@ public:
      * @return the value, or an empty string if the key is not available.
      * @version 1.9.2
      */
-    template< class V > V get( const std::string& key )
-        { return _get< V >( key ); }
+    template< class V > V get( const std::string& key ) const { return _get< V >( key ); }
 
     /**
      * Retrieve a value as a vector for a key.
@@ -152,7 +152,7 @@ public:
      * @return the values, or an empty vector if the key is not available.
      * @version 1.9.2
      */
-    template< class V > std::vector< V > getVector( const std::string& key );
+    template< class V > std::vector< V > getVector( const std::string& key ) const;
 
     /**
      * Retrieve a value as a set for a key.
@@ -161,18 +161,17 @@ public:
      * @return the values, or an empty set if the key is not available.
      * @version 1.9.2
      */
-    template< class V > std::set< V > getSet( const std::string& key );
+    template< class V > std::set< V > getSet( const std::string& key ) const;
 
     /**
      * Asynchronously retrieve a value which can be read later using get.
      *
      * @param key the key to retrieve.
-     * @return none
+     * @param sizeHint the size of the value, may be ignored by implementation.
+     * @return false on error, true otherwise.
      * @version 1.9.2
      */
-    uint64_t fetch(const std::string& key, char *buffer, int buflength);
-    std::string getfetched(uint64_t handle);
-
+    bool fetch( const std::string& key, size_t sizeHint = 0 ) const;
 
     /** @return true if the key exists. @version 1.9.2 */
     LUNCHBOX_API bool contains( const std::string& key ) const;
@@ -213,7 +212,7 @@ private:
                   const boost::true_type& )
         { return _insert( key, values.data(), values.size() * sizeof( V )); }
 
-    template< class V > V _get( const std::string& k )
+    template< class V > V _get( const std::string& k ) const
     {
         if( !boost::has_trivial_assign< V >( ))
             LBTHROW( std::runtime_error( "Can't retrieve non-POD " +
@@ -222,8 +221,10 @@ private:
             LBTHROW( std::runtime_error( "Can't retrieve pointers" ));
 
         const std::string& value = (*this)[ k ];
-        LBASSERTINFO( value.size() == sizeof( V ),
-                      value.size() << " != " << sizeof( V ) << " for " << k );
+        if( value.size() != sizeof( V ))
+            LBTHROW( std::runtime_error( std::string( "Wrong value size " ) +
+                                       boost::lexical_cast< std::string >( value.size( ))));
+
         return *reinterpret_cast< const V* >( &value[0] );
     }
 };
@@ -236,7 +237,7 @@ bool PersistentMap::_insert( const std::string& k, const std::string& v,
 }
 
 template< class V > inline
-std::vector< V > PersistentMap::getVector( const std::string& key )
+std::vector< V > PersistentMap::getVector( const std::string& key ) const
 {
     const std::string& value = (*this)[ key ];
     return std::vector< V >( reinterpret_cast< const V* >( value.data( )),
@@ -244,7 +245,7 @@ std::vector< V > PersistentMap::getVector( const std::string& key )
 }
 
 template< class V > inline
-std::set< V > PersistentMap::getSet( const std::string& key )
+std::set< V > PersistentMap::getSet( const std::string& key ) const
 {
     const std::string& value = (*this)[ key ];
     return std::set< V >( reinterpret_cast< const V* >( value.data( )),
