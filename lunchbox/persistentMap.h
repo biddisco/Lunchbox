@@ -19,10 +19,12 @@
 #define LUNCHBOX_PERSISTENTMAP_H
 
 #include <lunchbox/api.h>
+#include <lunchbox/bitOperation.h> // byteswap()
 #include <lunchbox/debug.h> // className
 #include <lunchbox/log.h> // LBTHROW
 #include <lunchbox/types.h>
 
+#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits.hpp>
@@ -143,7 +145,8 @@ public:
      * @return the value, or an empty string if the key is not available.
      * @version 1.9.2
      */
-    template< class V > V get( const std::string& key ) const { return _get< V >( key ); }
+    template< class V > V get( const std::string& key ) const
+        { return _get< V >( key ); }
 
     /**
      * Retrieve a value as a vector for a key.
@@ -152,7 +155,8 @@ public:
      * @return the values, or an empty vector if the key is not available.
      * @version 1.9.2
      */
-    template< class V > std::vector< V > getVector( const std::string& key ) const;
+    template< class V > std::vector< V > getVector( const std::string& key )
+        const;
 
     /**
      * Retrieve a value as a set for a key.
@@ -179,11 +183,15 @@ public:
     /** Flush outstanding operations to the backend storage. @version 1.10 */
     LUNCHBOX_API bool flush();
 
+    /** Enable or disable endianness conversion on reads. @version 1.9.2 */
+    LUNCHBOX_API void setByteswap( const bool swap );
+
 private:
     detail::PersistentMap* const _impl;
 
     LUNCHBOX_API bool _insert( const std::string& key, const void* data,
                                const size_t size );
+    LUNCHBOX_API bool _swap() const;
 
 
     // Enables map.insert( "foo", "bar" ); bar is a char[4]. The funny braces
@@ -216,16 +224,20 @@ private:
     {
         if( !boost::has_trivial_assign< V >( ))
             LBTHROW( std::runtime_error( "Can't retrieve non-POD " +
-                                     className( V( ))));
+                                         className( V( ))));
         if( boost::is_pointer< V >::value )
             LBTHROW( std::runtime_error( "Can't retrieve pointers" ));
 
         const std::string& value = (*this)[ k ];
         if( value.size() != sizeof( V ))
             LBTHROW( std::runtime_error( std::string( "Wrong value size " ) +
-                                       boost::lexical_cast< std::string >( value.size( ))));
+                            boost::lexical_cast< std::string >( value.size( )) +
+                                         " for type " + className( V( ))));
 
-        return *reinterpret_cast< const V* >( &value[0] );
+        V v( *reinterpret_cast< const V* >( value.data( )));
+        if( _swap( ))
+            byteswap( v );
+        return v;
     }
 };
 
@@ -240,21 +252,31 @@ template< class V > inline
 std::vector< V > PersistentMap::getVector( const std::string& key ) const
 {
     const std::string& value = (*this)[ key ];
-    return std::vector< V >( reinterpret_cast< const V* >( value.data( )),
+    std::vector< V > vector( reinterpret_cast< const V* >( value.data( )),
                    reinterpret_cast< const V* >( value.data() + value.size( )));
+    if( _swap( ))
+    {
+        BOOST_FOREACH( V& elem, vector )
+            byteswap( elem );
+    }
+    return vector;
 }
 
 template< class V > inline
 std::set< V > PersistentMap::getSet( const std::string& key ) const
 {
-    const std::string& value = (*this)[ key ];
-    return std::set< V >( reinterpret_cast< const V* >( value.data( )),
-                          reinterpret_cast< const V* >( value.data() +
-                                                        value.size( )));
+    std::string value = (*this)[ key ];
+    V* const begin = reinterpret_cast< V* >(
+                         const_cast< char * >( value.data( )));
+    V* const end = begin + value.size() / sizeof( V );
+
+    if( _swap( ))
+        for( V* i = begin; i < end; ++i )
+            byteswap( *i );
+
+    return std::set< V >( begin, end );
 }
 
-
-// inline std::ostream& operator << ( std::ostream& os, const PersistentMap& m )
 }
 
 #endif //LUNCHBOX_PERSISTENTMAP_H

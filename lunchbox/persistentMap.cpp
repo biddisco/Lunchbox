@@ -25,6 +25,7 @@ namespace detail
 class PersistentMap
 {
 public:
+    PersistentMap() : swap( false ) {}
     virtual ~PersistentMap() {}
     virtual size_t setQueueDepth( const size_t ) { return 0; }
     virtual bool insert( const std::string& key, const void* data,
@@ -34,6 +35,8 @@ public:
         { return true; }
     virtual bool contains( const std::string& key ) const = 0;
     virtual bool flush() = 0;
+
+    bool swap;
 };
 }
 }
@@ -134,6 +137,16 @@ bool PersistentMap::contains( const std::string& key ) const
 bool PersistentMap::flush()
 {
     return _impl->flush();
+}
+
+void PersistentMap::setByteswap( const bool swap )
+{
+    _impl->swap = swap;
+}
+
+bool PersistentMap::_swap() const
+{
+    return _impl->swap;
 }
 
 }

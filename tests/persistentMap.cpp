@@ -45,13 +45,42 @@ template< class T > void insertVector( PersistentMap& map )
     TEST( map.insert( typeid( vector ).name(), vector ));
 }
 
-template< class T > void readVector( PersistentMap& map )
+template< class T > void readVector( const PersistentMap& map )
 {
     const std::vector< T >& vector =
         map.getVector< T >( typeid( vector ).name( ));
     TESTINFO( vector.size() ==  numInts, vector.size() << " != " << numInts );
     for( size_t i = 0; i < numInts; ++i )
         TEST( vector[ i ] == T( ints[i] ));
+}
+
+void read( const PersistentMap& map )
+{
+    const std::set< uint32_t >& bigSet =
+        map.getSet< uint32_t >( "std::set< uint32_t >" );
+    TEST( bigSet.size() == 1000 );
+    for( uint32_t i = 1; i <= 1000; ++i )
+        TEST( bigSet.find( i ) != bigSet.end( ));
+
+    TEST( map[ "foo" ] == "bar" );
+    TEST( map[ "bar" ].empty( ));
+    TEST( map.get< bool >( "bValue" ) == true );
+    TEST( map.get< int >( "iValue" ) == 42 );
+
+    readVector< int >( map );
+    readVector< uint16_t >( map );
+
+    const std::set< int >& set = map.getSet< int >( "std::set< int >" );
+    TESTINFO( set.size() ==  numInts, set.size() << " != " << numInts );
+    for( size_t i = 0; i < numInts; ++i )
+        TESTINFO( set.find( ints[i] ) != set.end(),
+                  ints[i] << " not found in set" );
+}
+
+void read( const std::string& uri )
+{
+    PersistentMap map( uri );
+    read( map );
 }
 
 void setup( const std::string& uri )
@@ -85,24 +114,13 @@ void setup( const std::string& uri )
 
     std::set< int > set( ints, ints + numInts );
     TEST( map.insert( "std::set< int >", set ));
-}
 
-void read( const std::string& uri )
-{
-    PersistentMap map( uri );
-    TEST( map[ "foo" ] == "bar" );
-    TEST( map[ "bar" ].empty( ));
-    TEST( map.get< bool >( "bValue" ) == true );
-    TEST( map.get< int >( "iValue" ) == 42 );
+    std::set< uint32_t > bigSet;
+    for( uint32_t i = 1; i <= 1000; ++i )
+        bigSet.insert( i );
+    TEST( map.insert( "std::set< uint32_t >", bigSet ));
 
-    readVector< int >( map );
-    readVector< uint16_t >( map );
-
-    const std::set< int >& set = map.getSet< int >( "std::set< int >" );
-    TESTINFO( set.size() ==  numInts, set.size() << " != " << numInts );
-    for( size_t i = 0; i < numInts; ++i )
-        TESTINFO( set.find( ints[i] ) != set.end(),
-                  ints[i] << " not found in set" );
+    read( map );
 }
 
 void benchmark( const std::string& uri, const uint64_t queueDepth )
@@ -181,9 +199,9 @@ void benchmark( const std::string& uri, const uint64_t queueDepth )
     const float fetchTime = clock.getTimef();
     const size_t fOps = i;
 
-    std::cout << boost::format(
-        "write %7.2f, read %7.2f, fetch %7.2f ops/ms, queue-depth %6i") % (wOps/insertTime)
-        % (rOps/readTime) % (fOps/fetchTime) % queueDepth << std::endl;
+    std::cout << boost::format( "%7.2f, %7.2f, %7.2f, %6i")
+        % queueDepth % (rOps/insertTime) % (wOps/readTime) % (fOps/fetchTime)
+              << std::endl;
 
     // check contents of store (not all to save time on bigger tests)
     for( uint64_t j = 0; j < wOps && clock.getTime64() < loopTime; ++j )
@@ -247,6 +265,7 @@ int main( int, char* argv[] )
         read( "skv://" );
         if( perfTest )
         {
+            std::cout << "  async,    read,   write,   fetch" << std::endl;
             benchmark( "skv://", 0 );
             for( size_t i=1; i < 100000; i = i<<1 )
                 benchmark( "skv://", i );
