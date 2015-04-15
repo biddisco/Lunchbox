@@ -104,6 +104,19 @@ public:
         { return _insert( key, value, boost::has_trivial_assign< V >( )); }
 
     /**
+     * Insert or update a value in the database using a fixed length byte array value.
+     *
+     * @param key the key to store the value.
+     * @param value pointer to the value data stored at the key.
+     * @param length the length of the value array
+     * @return true on success, false otherwise
+     * @throw std::runtime_error if the value is not copyable
+     * @version 1.9.2
+     */
+    bool insert( const std::string& key, const void * value, size_t length )
+        { return _insert( key, value, length); }
+
+    /**
      * Insert or update a vector of values in the database.
      *
      * @param key the key to store the value.
